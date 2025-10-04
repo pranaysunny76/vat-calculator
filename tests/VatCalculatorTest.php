@@ -1,78 +1,60 @@
 <?php
-
 namespace Tests;
-
 use Mockery as m;
 use Mpociot\VatCalculator\VatCalculator;
 use PHPUnit\Framework\TestCase;
-
 class VatCalculatorTest extends TestCase
 {
     public static $file_get_contents_result;
-
     protected function tearDown(): void
     {
         parent::tearDown();
-
         m::close();
     }
-
     public function testCalculateVatWithoutCountry()
     {
         $config = m::mock('Illuminate\Contracts\Config\Repository');
-
         $config->shouldReceive('has')
             ->once()
             ->with('vat_calculator.business_country_code')
             ->andReturn(false);
-
         $config->shouldReceive('has')
             ->once()
             ->with('vat_calculator.rules.')
             ->andReturn(false);
-
         $net = 25.00;
-
         $vatCalculator = new VatCalculator($config);
         $result = $vatCalculator->calculate($net);
         $this->assertEquals(25.00, $result);
     }
-
     public function testCalculateVatWithoutCountryAndConfig()
     {
         $net = 25.00;
-
         $vatCalculator = new VatCalculator();
         $result = $vatCalculator->calculate($net);
         $this->assertEquals(25.00, $result);
     }
-
     public function testCalculateVatWithPredefinedRules()
     {
         $net = 24.00;
         $countryCode = 'DE';
-
         $config = m::mock('Illuminate\Contracts\Config\Repository');
         $config->shouldReceive('get')
             ->never();
-
         $config->shouldReceive('has')
             ->once()
             ->with('vat_calculator.rules.DE')
             ->andReturn(false);
-
         $config->shouldReceive('has')
             ->once()
             ->with('vat_calculator.business_country_code')
             ->andReturn(false);
-
         $vatCalculator = new VatCalculator($config);
         $result = $vatCalculator->calculate($net, $countryCode);
         $this->assertEquals(28.56, $result);
         $this->assertEquals(0.19, $vatCalculator->getTaxRate());
         $this->assertEquals(4.56, $vatCalculator->getTaxValue());
     }
-
     public function testCalculateVatWithPredefinedRulesWithoutConfig()
     {
         $net = 24.00;
